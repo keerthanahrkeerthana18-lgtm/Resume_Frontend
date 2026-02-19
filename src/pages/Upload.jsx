@@ -19,8 +19,18 @@ export default function Upload(){
     setLoading(true)
     try{
       const res = await analyzeResume(file)
-      // assume backend returns { candidateName, fraudScore, highlights }
-      const payload = res.data || { candidateName: 'Demo User', fraudScore: 32, highlights: ['Mismatch in dates'] }
+      // Map backend response shape to what Result.jsx expects
+      const backendData = res.data
+      const payload = {
+        candidateName: file.name.replace(/\.[^/.]+$/, ''), // use filename as candidate name
+        fraudScore: backendData?.analysis?.fraud_score ?? 0,
+        riskLevel: backendData?.analysis?.risk_level ?? 'LOW',
+        decision: backendData?.analysis?.decision ?? 'ACCEPT',
+        highlights: backendData?.flags?.length
+          ? backendData.flags
+          : ['No suspicious points detected'],
+        verification: backendData?.verification ?? {}
+      }
       localStorage.setItem('rfd_last_result', JSON.stringify(payload))
       navigate('/result')
     }catch(e){
